@@ -1,0 +1,40 @@
+// Plinko Lab - Provably Fair Gaming Schema
+// This schema defines the Round model for storing game rounds with fairness proofs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Round {
+  id                String    @id @default(cuid())
+  createdAt         DateTime  @default(now())
+  status            String    // CREATED | STARTED | REVEALED
+  
+  // Fairness protocol fields
+  nonce             String
+  commitHex         String    // SHA256(serverSeed:nonce)
+  serverSeed        String?   // revealed post-round
+  clientSeed        String
+  combinedSeed      String    // SHA256(serverSeed:clientSeed:nonce)
+  pegMapHash        String    // SHA256 of peg map for verification
+  
+  // Game parameters
+  rows              Int       // Always 12 for this implementation
+  dropColumn        Int       // 0..12 (player choice)
+  binIndex          Int       // 0..12 (final landing position)
+  payoutMultiplier  Float
+  betCents          Int
+  
+  // Replay data
+  pathJson          Json      // Array of decisions per row for deterministic replay
+  
+  revealedAt        DateTime?
+  
+  @@index([status])
+  @@index([createdAt])
+}

@@ -1,65 +1,179 @@
-import Image from "next/image";
+/**
+ * Plinko Lab - Main Game Page
+ * Provably fair Plinko game with commit-reveal protocol
+ */
+
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import PlinkoBoard from '@/components/PlinkoBoard';
+import GameControls from '@/components/GameControls';
+import PaytableDisplay from '@/components/PaytableDisplay';
+import RoundInfo from '@/components/RoundInfo';
+import { PathDecision } from '@/lib/plinko-engine';
+
+interface RoundData {
+  roundId: string;
+  commitHex: string;
+  nonce: string;
+  clientSeed: string;
+  serverSeed?: string;
+  pegMapHash: string;
+  path: PathDecision[];
+  binIndex: number;
+  payoutMultiplier: number;
+  payout: number;
+  status: string;
+}
 
 export default function Home() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentRound, setCurrentRound] = useState<RoundData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDrop = async (dropColumn: number, betCents: number, clientSeed: string) => {
+    setError(null);
+    setIsPlaying(true);
+
+    try {
+      // Step 1: Commit
+      const commitRes = await fetch('/api/rounds/commit', {
+        method: 'POST',
+      });
+      
+      if (!commitRes.ok) {
+        throw new Error('Failed to create round');
+      }
+
+      const { roundId, commitHex, nonce } = await commitRes.json();
+
+      // Step 2: Start round
+      const startRes = await fetch(`/api/rounds/${roundId}/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientSeed, betCents, dropColumn }),
+      });
+
+      if (!startRes.ok) {
+        throw new Error('Failed to start round');
+      }
+
+      const startData = await startRes.json();
+
+      // Update state with round data (without server seed yet)
+      setCurrentRound({
+        roundId,
+        commitHex,
+        nonce,
+        clientSeed,
+        pegMapHash: startData.pegMapHash,
+        path: startData.path,
+        binIndex: startData.binIndex,
+        payoutMultiplier: startData.payoutMultiplier,
+        payout: startData.payout,
+        status: 'STARTED',
+      });
+
+      // Wait for animation to complete before revealing
+      setTimeout(async () => {
+        // Step 3: Reveal server seed
+        const revealRes = await fetch(`/api/rounds/${roundId}/reveal`, {
+          method: 'POST',
+        });
+
+        if (revealRes.ok) {
+          const revealData = await revealRes.json();
+          setCurrentRound((prev) => prev ? {
+            ...prev,
+            serverSeed: revealData.serverSeed,
+            status: 'REVEALED',
+          } : null);
+        }
+
+        setIsPlaying(false);
+      }, 2000); // Give time for animation
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setIsPlaying(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <header className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            Plinko Lab
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <p className="text-gray-400">Provably Fair Gaming with Commit-Reveal Protocol</p>
+          <Link
+            href="/verify"
+            className="inline-block mt-2 text-sm text-blue-400 hover:text-blue-300 underline"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            Verify Fairness →
+          </Link>
+        </header>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200">
+            <p className="font-bold">Error:</p>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* Main Game Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column: Controls & Info */}
+          <div className="space-y-6">
+            <GameControls
+              onDrop={handleDrop}
+              isPlaying={isPlaying}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            
+            <RoundInfo
+              roundId={currentRound?.roundId}
+              commitHex={currentRound?.commitHex}
+              nonce={currentRound?.nonce}
+              clientSeed={currentRound?.clientSeed}
+              serverSeed={currentRound?.serverSeed}
+              binIndex={currentRound?.binIndex}
+              payout={currentRound?.payout}
+              payoutMultiplier={currentRound?.payoutMultiplier}
+              status={currentRound?.status}
+            />
+          </div>
+
+          {/* Center Column: Game Board */}
+          <div className="lg:col-span-2">
+            <PlinkoBoard
+              path={currentRound?.path}
+              binIndex={currentRound?.binIndex}
+              isAnimating={isPlaying}
+              onAnimationComplete={() => {
+                // Animation complete callback
+              }}
+            />
+            
+            <div className="mt-6">
+              <PaytableDisplay />
+            </div>
+          </div>
         </div>
-      </main>
+
+        {/* Footer */}
+        <footer className="mt-12 text-center text-sm text-gray-500">
+          <p>
+            This is a demonstration of provably fair gaming. No real money involved.
+          </p>
+          <p className="mt-2">
+            All outcomes are deterministic and verifiable through cryptographic proofs.
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }
