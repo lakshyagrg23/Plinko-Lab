@@ -64,9 +64,10 @@ export default function PlinkoBoard({
     ctx.clearRect(0, 0, width, height);
 
     // Draw pegs
+    // First row has 3 pegs, each subsequent row adds 1 peg
     ctx.fillStyle = '#94a3b8';
     for (let row = 0; row < ROWS; row++) {
-      const pegCount = row + 1;
+      const pegCount = row + 3; // Start with 3 pegs in first row
       const y = topMargin + (row + 1) * rowSpacing;
       
       for (let peg = 0; peg < pegCount; peg++) {
@@ -135,7 +136,7 @@ export default function PlinkoBoard({
     const horizontalSpacing = width / (BINS + 1);
 
     let currentRow = 0;
-    let currentPos = 0;
+    let currentPos = 1; // Track which gap the ball is in (0 = leftmost gap)
     let animationId: number;
 
     const animate = () => {
@@ -146,17 +147,23 @@ export default function PlinkoBoard({
 
       const decision = path[currentRow];
       
-      // Calculate target position
+      // Calculate target position (gap number after this row)
       if (decision.decision === 'RIGHT') {
         currentPos++;
       }
+      // If LEFT, currentPos stays the same (same gap)
 
       const endY = topMargin + (currentRow + 1) * rowSpacing;
       
-      // Calculate X position based on current path
-      const pegCount = currentRow + 1;
-      const rowStartX = width / 2 - (pegCount - 1) * horizontalSpacing / 2;
-      const currentX = rowStartX + currentPos * horizontalSpacing;
+      // Calculate X position: ball travels in GAPS between pegs
+      // For row with pegCount pegs (starting with 3), there are pegCount+1 gaps
+      const pegCount = currentRow + 3; // Visual peg count (3, 4, 5, ...)
+      const gapCount = pegCount + 1; // Number of gaps between/around pegs
+      
+      // Center the gaps around the board center
+      const totalGapWidth = (gapCount - 1) * horizontalSpacing;
+      const firstGapX = width / 2 - totalGapWidth / 2;
+      const currentX = firstGapX + currentPos * horizontalSpacing;
 
       // Clear and redraw (simplified - in production would optimize)
       // For now, just draw ball
