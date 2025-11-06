@@ -118,7 +118,10 @@ export default function PlinkoBoard({
 
   // Animate ball following path
   useEffect(() => {
-    if (!path || !isAnimating) return;
+    if (!path || !isAnimating) {
+      console.log('⏸️ Animation skipped - path or isAnimating is false');
+      return;
+    }
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -126,8 +129,11 @@ export default function PlinkoBoard({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    console.log('🚀 New animation starting - previous should be cleaned up');
+
     const { width, height } = dimensions;
     const ballRadius = width * 0.012;
+    const pegRadius = width * 0.006;
     const topMargin = height * 0.05;
     const binHeight = height * 0.08;
     const bottomMargin = binHeight + 20;
@@ -138,14 +144,89 @@ export default function PlinkoBoard({
     let currentRow = 0;
     let currentPos = 1; // Track which gap the ball is in (0 = leftmost gap)
     let animationId: number;
+    let timeoutId: NodeJS.Timeout | null = null;
+    let isCancelled = false; // Flag to prevent animation after cleanup
+
+    // Initial logging
+    console.log('🎮 Starting Animation:', {
+      totalRows: path.length,
+      expectedBinIndex: binIndex,
+      startingPosition: currentPos,
+      canvasDimensions: { width, height },
+      rowSpacing,
+      horizontalSpacing,
+    });
+    console.log('📍 Full Path:', path.map(p => `Row ${p.row}: ${p.decision}`).join(' → '));
+
+    // Helper function to redraw the entire board
+    const redrawBoard = () => {
+      // Clear entire canvas
+      ctx.clearRect(0, 0, width, height);
+
+      // Redraw pegs
+      ctx.fillStyle = '#94a3b8';
+      for (let row = 0; row < ROWS; row++) {
+        const pegCount = row + 3;
+        const y = topMargin + (row + 1) * rowSpacing;
+        
+        for (let peg = 0; peg < pegCount; peg++) {
+          const x = width / 2 - (pegCount - 1) * horizontalSpacing / 2 + peg * horizontalSpacing;
+          ctx.beginPath();
+          ctx.arc(x, y, pegRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Redraw bins
+      const binY = height - binHeight;
+      const binWidth = width / BINS;
+
+      for (let i = 0; i < BINS; i++) {
+        const x = i * binWidth;
+        const color = getBinColor(i);
+        
+        ctx.fillStyle = color + '40';
+        ctx.fillRect(x, binY, binWidth - 2, binHeight);
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, binY, binWidth - 2, binHeight);
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = `${width * 0.015}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.fillText(i.toString(), x + binWidth / 2, binY + binHeight / 2);
+      }
+
+      // Highlight landing bin if we know it
+      if (binIndex !== undefined) {
+        const x = binIndex * binWidth;
+        const color = getBinColor(binIndex);
+        
+        ctx.fillStyle = color + '80';
+        ctx.fillRect(x, binY, binWidth - 2, binHeight);
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x, binY, binWidth - 2, binHeight);
+      }
+    };
 
     const animate = () => {
+      // Check if animation was cancelled
+      if (isCancelled) {
+        console.log('🛑 Animation cancelled');
+        return;
+      }
+
       if (currentRow >= path.length) {
+        console.log('🎯 Animation Complete! Final position:', currentPos);
         onAnimationComplete?.();
         return;
       }
 
       const decision = path[currentRow];
+      const posBeforeMove = currentPos;
       
       // Calculate target position (gap number after this row)
       if (decision.decision === 'RIGHT') {
@@ -165,8 +246,23 @@ export default function PlinkoBoard({
       const firstGapX = width / 2 - totalGapWidth / 2;
       const currentX = firstGapX + currentPos * horizontalSpacing;
 
-      // Clear and redraw (simplified - in production would optimize)
-      // For now, just draw ball
+      // Debug logging
+      console.log(`🏐 Row ${currentRow}:`, {
+        decision: decision.decision,
+        positionBefore: posBeforeMove,
+        positionAfter: currentPos,
+        pegCount,
+        gapCount,
+        xPosition: currentX.toFixed(2),
+        yPosition: endY.toFixed(2),
+        firstGapX: firstGapX.toFixed(2),
+        totalGapWidth: totalGapWidth.toFixed(2),
+      });
+
+      // Clear canvas and redraw everything
+      redrawBoard();
+
+      // Draw the ball at current position
       ctx.fillStyle = '#fbbf24';
       ctx.shadowBlur = 10;
       ctx.shadowColor = '#fbbf24';
@@ -178,8 +274,10 @@ export default function PlinkoBoard({
       currentRow++;
       
       if (currentRow < path.length) {
-        setTimeout(() => {
-          animationId = requestAnimationFrame(animate);
+        timeoutId = setTimeout(() => {
+          if (!isCancelled) {
+            animationId = requestAnimationFrame(animate);
+          }
         }, 100); // 100ms per row
       } else {
         onAnimationComplete?.();
@@ -189,11 +287,18 @@ export default function PlinkoBoard({
     animationId = requestAnimationFrame(animate);
 
     return () => {
+      console.log('🧹 Cleanup: Cancelling animation');
+      isCancelled = true;
+      
       if (animationId) {
         cancelAnimationFrame(animationId);
       }
+      
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
-  }, [path, isAnimating, dimensions, onAnimationComplete]);
+  }, [path, isAnimating, dimensions, onAnimationComplete, binIndex]);
 
   return (
     <div className="flex justify-center items-center w-full">
