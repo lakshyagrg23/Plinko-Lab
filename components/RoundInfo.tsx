@@ -6,6 +6,8 @@
 
 'use client';
 
+import { useState } from 'react';
+
 interface RoundInfoProps {
   roundId?: string;
   commitHex?: string;
@@ -16,6 +18,7 @@ interface RoundInfoProps {
   payout?: number;
   payoutMultiplier?: number;
   status?: string;
+  dropColumn?: number;
 }
 
 export default function RoundInfo({
@@ -28,7 +31,36 @@ export default function RoundInfo({
   payout,
   payoutMultiplier,
   status,
+  dropColumn,
 }: RoundInfoProps) {
+  const [copied, setCopied] = useState(false);
+
+  const generateVerifyLink = () => {
+    if (!serverSeed || !clientSeed || !nonce || dropColumn === undefined) return '';
+    
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const params = new URLSearchParams({
+      serverSeed,
+      clientSeed,
+      nonce,
+      dropColumn: dropColumn.toString(),
+    });
+    
+    return `${baseUrl}/verify?${params.toString()}`;
+  };
+
+  const copyVerifyLink = async () => {
+    const link = generateVerifyLink();
+    if (!link) return;
+
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
   if (!roundId) {
     return (
       <div 
@@ -123,15 +155,25 @@ export default function RoundInfo({
           </div>
         </div>
 
-        {status === 'REVEALED' && (
-          <a
-            href={`/verify?roundId=${roundId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block mt-4 text-center py-2 bg-blue-600 hover:bg-blue-500 rounded text-white text-sm font-medium transition-colors"
-          >
-            Verify This Round →
-          </a>
+        {status === 'REVEALED' && serverSeed && clientSeed && dropColumn !== undefined && (
+          <div className="mt-4 space-y-2">
+            <a
+              href={generateVerifyLink()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded text-white text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              Verify This Round →
+            </a>
+            
+            <button
+              onClick={copyVerifyLink}
+              className="w-full py-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded text-white text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
+              aria-label="Copy verification link to clipboard"
+            >
+              {copied ? '✓ Copied!' : '📋 Copy Verify Link'}
+            </button>
+          </div>
         )}
       </div>
     </div>

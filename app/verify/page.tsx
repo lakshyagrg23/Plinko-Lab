@@ -7,8 +7,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { PathDecision } from '@/lib/plinko-engine';
 
 interface VerificationResult {
@@ -29,6 +30,7 @@ interface VerificationResult {
 }
 
 export default function VerifyPage() {
+  const searchParams = useSearchParams();
   const [serverSeed, setServerSeed] = useState('');
   const [clientSeed, setClientSeed] = useState('');
   const [nonce, setNonce] = useState('');
@@ -36,9 +38,24 @@ export default function VerifyPage() {
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [autoVerified, setAutoVerified] = useState(false);
 
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Populate form from URL parameters
+  useEffect(() => {
+    const urlServerSeed = searchParams.get('serverSeed');
+    const urlClientSeed = searchParams.get('clientSeed');
+    const urlNonce = searchParams.get('nonce');
+    const urlDropColumn = searchParams.get('dropColumn');
+
+    if (urlServerSeed) setServerSeed(urlServerSeed);
+    if (urlClientSeed) setClientSeed(urlClientSeed);
+    if (urlNonce) setNonce(urlNonce);
+    if (urlDropColumn) setDropColumn(urlDropColumn);
+  }, [searchParams]);
+
+  const performVerification = useCallback(async () => {
+    if (!serverSeed || !clientSeed || !nonce || !dropColumn) return;
+    
     setError(null);
     setResult(null);
     setIsLoading(true);
@@ -65,6 +82,31 @@ export default function VerifyPage() {
     } finally {
       setIsLoading(false);
     }
+  }, [serverSeed, clientSeed, nonce, dropColumn]);
+
+  // Auto-verify when all fields are populated from URL
+  useEffect(() => {
+    if (
+      searchParams.get('serverSeed') && 
+      searchParams.get('clientSeed') && 
+      searchParams.get('nonce') && 
+      searchParams.get('dropColumn') &&
+      serverSeed && 
+      clientSeed && 
+      nonce && 
+      dropColumn &&
+      !autoVerified &&
+      !result &&
+      !isLoading
+    ) {
+      setAutoVerified(true);
+      performVerification();
+    }
+  }, [serverSeed, clientSeed, nonce, dropColumn, searchParams, result, isLoading, autoVerified, performVerification]);
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await performVerification();
   };
 
   const loadTestVector = () => {
@@ -97,7 +139,7 @@ export default function VerifyPage() {
         <div className="bg-gray-800 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-bold mb-4">Verify Round Outcome</h2>
           
-          <form onSubmit={handleVerify} className="space-y-4">
+          <form id="verify-form" onSubmit={handleVerify} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Server Seed

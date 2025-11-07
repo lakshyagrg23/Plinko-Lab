@@ -29,6 +29,7 @@ interface RoundData {
   payoutMultiplier: number;
   payout: number;
   status: string;
+  dropColumn: number;
 }
 
 export default function Home() {
@@ -84,6 +85,7 @@ export default function Home() {
         payoutMultiplier: startData.payoutMultiplier,
         payout: startData.payout,
         status: 'STARTED',
+        dropColumn,
       });
 
       // Wait for animation to complete before revealing
@@ -173,6 +175,7 @@ export default function Home() {
               payout={currentRound?.payout}
               payoutMultiplier={currentRound?.payoutMultiplier}
               status={currentRound?.status}
+              dropColumn={currentRound?.dropColumn}
             />
           </div>
 
