@@ -46,6 +46,12 @@ export default function Home() {
   const prefersReducedMotion = useReducedMotion();
 
   const handleDrop = async (dropColumn: number, betCents: number, clientSeed: string) => {
+    // Prevent concurrent drops
+    if (isPlaying) {
+      console.log('🚫 Drop ignored - animation already in progress');
+      return;
+    }
+    
     setError(null);
     setIsPlaying(true);
 
@@ -105,7 +111,7 @@ export default function Home() {
           } : null);
         }
 
-        setIsPlaying(false);
+        // Note: isPlaying will be set to false by onAnimationComplete callback
       }, 2000); // Give time for animation
 
     } catch (err) {
@@ -226,6 +232,9 @@ export default function Home() {
               isAnimating={isPlaying}
               onPegHit={playPegSound}
               onAnimationComplete={() => {
+                // Animation completed - re-enable the drop button
+                setIsPlaying(false);
+                
                 // Play landing sound and trigger confetti for big wins
                 if (currentRound?.payoutMultiplier) {
                   if (currentRound.payoutMultiplier >= 2) {
