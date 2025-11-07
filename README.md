@@ -2,7 +2,7 @@
 
 An interactive **Plinko game** with a cryptographically secure **commit-reveal protocol** for provable fairness. Built with Next.js 14, TypeScript, and HTML5 Canvas.
 
-🔗 **[Live Demo](https://plinko-lab.vercel.app)** | 🔍 **[Verifier Page](https://plinko-lab.vercel.app/verify)** | 📊 **[Example Verification](https://plinko-lab.vercel.app/verify?serverSeed=b2a5f3f32a4d9c6ee7a8c1d33456677890abcdeffedcba0987654321ffeeddcc&clientSeed=candidate-hello&nonce=42&dropColumn=6)**
+🔗 **[Live Demo](https://plinko-9tcjrl6fw-l5grg23-gmailcoms-projects.vercel.app/)**
 
 ---
 
