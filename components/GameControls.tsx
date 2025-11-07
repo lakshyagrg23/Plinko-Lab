@@ -48,7 +48,13 @@ export default function GameControls({
 
   return (
     <div 
-      className="bg-gray-800 rounded-lg p-4 sm:p-6 space-y-4 sm:space-y-6"
+      className="rounded-lg p-4 sm:p-6 space-y-4 sm:space-y-6 transition-colors duration-300"
+      style={{
+        backgroundColor: 'var(--background-secondary)',
+        borderColor: 'var(--border)',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+      }}
       onKeyDown={handleKeyPress}
       tabIndex={0}
       role="region"

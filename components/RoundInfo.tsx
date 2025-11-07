@@ -64,7 +64,14 @@ export default function RoundInfo({
   if (!roundId) {
     return (
       <div 
-        className="bg-gray-800 rounded-lg p-4 sm:p-6 text-center text-gray-400"
+        className="rounded-lg p-4 sm:p-6 text-center transition-colors duration-300"
+        style={{
+          backgroundColor: 'var(--background-secondary)',
+          color: 'var(--foreground-secondary)',
+          borderColor: 'var(--border)',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+        }}
         role="status"
         aria-live="polite"
       >
@@ -75,7 +82,13 @@ export default function RoundInfo({
 
   return (
     <div 
-      className="bg-gray-800 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4"
+      className="rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4 transition-colors duration-300"
+      style={{
+        backgroundColor: 'var(--background-secondary)',
+        borderColor: 'var(--border)',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+      }}
       role="region"
       aria-label="Round Information"
     >

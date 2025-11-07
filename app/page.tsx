@@ -12,6 +12,7 @@ import GameControls from '@/components/GameControls';
 import PaytableDisplay from '@/components/PaytableDisplay';
 import RoundInfo from '@/components/RoundInfo';
 import MuteToggle from '@/components/MuteToggle';
+import ThemeToggle from '@/components/ThemeToggle';
 import Confetti from '@/components/Confetti';
 import { PathDecision } from '@/lib/plinko-engine';
 import { useSoundEffects } from '@/lib/useSoundEffects';
@@ -114,24 +115,62 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+    <div 
+      className="min-h-screen transition-colors duration-300"
+      style={{
+        background: 'linear-gradient(135deg, var(--background) 0%, var(--background-secondary) 50%, var(--background) 100%)',
+        color: 'var(--foreground)',
+      }}
+    >
       <div className="container mx-auto px-4 py-4 sm:py-8 max-w-7xl">
         {/* Header */}
         <header className="text-center mb-6 sm:mb-8">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
             Plinko Lab
           </h1>
-          <p className="text-sm sm:text-base text-gray-400">Provably Fair Gaming with Commit-Reveal Protocol</p>
+          <p 
+            className="text-sm sm:text-base"
+            style={{ color: 'var(--foreground-secondary)' }}
+          >
+            Provably Fair Gaming with Commit-Reveal Protocol
+          </p>
           <Link
             href="/verify"
-            className="inline-block mt-2 text-sm text-blue-400 hover:text-blue-300 underline"
+            className="inline-block mt-2 text-sm hover:underline transition-colors"
+            style={{ color: 'var(--primary)' }}
           >
             Verify Fairness →
           </Link>
           
-          {/* Accessibility Indicators */}
+          {/* Accessibility + Export Controls */}
           <div className="flex justify-center gap-2 sm:gap-4 mt-4 flex-wrap">
             <MuteToggle isMuted={isMuted} onToggle={toggleMute} />
+            <ThemeToggle />
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/rounds/export?limit=500');
+                  if (!res.ok) throw new Error('Export failed');
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `plinko_rounds_${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  URL.revokeObjectURL(url);
+                } catch (err) {
+                  console.error(err);
+                }
+              }}
+              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              aria-label="Download recent rounds CSV"
+              title="Download recent rounds CSV"
+            >
+              ⤓ Download CSV
+            </button>
+
             {prefersReducedMotion && (
               <div 
                 className="px-3 py-1 bg-blue-900/50 border border-blue-500 rounded-full text-xs text-blue-300"
@@ -189,10 +228,10 @@ export default function Home() {
               onAnimationComplete={() => {
                 // Play landing sound and trigger confetti for big wins
                 if (currentRound?.payoutMultiplier) {
-                  if (currentRound.payoutMultiplier >= 5) {
+                  if (currentRound.payoutMultiplier >= 2) {
                     playWinSound(); // Big win!
                     setShowConfetti(true); // Trigger confetti
-                  } else if (currentRound.payoutMultiplier >= 2) {
+                  } else if (currentRound.payoutMultiplier >= 1.4) {
                     playLandingSound(currentRound.payoutMultiplier);
                     setShowConfetti(true); // Smaller confetti for medium wins
                   } else {

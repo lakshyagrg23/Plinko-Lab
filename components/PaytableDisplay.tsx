@@ -11,7 +11,13 @@ import { PAYTABLE } from '@/lib/payout';
 export default function PaytableDisplay() {
   return (
     <div 
-      className="bg-gray-800 rounded-lg p-4 sm:p-6"
+      className="rounded-lg p-4 sm:p-6 transition-colors duration-300"
+      style={{
+        backgroundColor: 'var(--background-secondary)',
+        borderColor: 'var(--border)',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+      }}
       role="region"
       aria-label="Payout Multipliers Table"
     >
