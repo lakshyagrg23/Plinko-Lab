@@ -31,20 +31,28 @@ export default function RoundInfo({
 }: RoundInfoProps) {
   if (!roundId) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 text-center text-gray-400">
-        <p>No active round. Click &ldquo;Drop Ball&rdquo; to start!</p>
+      <div 
+        className="bg-gray-800 rounded-lg p-4 sm:p-6 text-center text-gray-400"
+        role="status"
+        aria-live="polite"
+      >
+        <p className="text-sm sm:text-base">No active round. Click &ldquo;Drop Ball&rdquo; to start!</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 space-y-4">
-      <h3 className="text-lg font-bold text-white">Round Information</h3>
+    <div 
+      className="bg-gray-800 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4"
+      role="region"
+      aria-label="Round Information"
+    >
+      <h3 className="text-base sm:text-lg font-bold text-white">Round Information</h3>
       
       <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-gray-400">Round ID:</span>
-          <span className="text-white font-mono text-xs">{roundId}</span>
+        <div className="flex justify-between items-start gap-2">
+          <span className="text-gray-400 flex-shrink-0">Round ID:</span>
+          <span className="text-white font-mono text-xs break-all text-right">{roundId}</span>
         </div>
         
         <div className="flex justify-between">
@@ -53,7 +61,7 @@ export default function RoundInfo({
             status === 'REVEALED' ? 'text-green-500' :
             status === 'STARTED' ? 'text-yellow-500' :
             'text-blue-500'
-          }`}>
+          }`} role="status" aria-live="polite">
             {status}
           </span>
         </div>
@@ -62,17 +70,17 @@ export default function RoundInfo({
           <>
             <div className="flex justify-between">
               <span className="text-gray-400">Landing Bin:</span>
-              <span className="text-white font-bold text-lg">{binIndex}</span>
+              <span className="text-white font-bold text-base sm:text-lg">{binIndex}</span>
             </div>
             
             <div className="flex justify-between">
               <span className="text-gray-400">Multiplier:</span>
-              <span className="text-white font-bold">{payoutMultiplier}x</span>
+              <span className="text-white font-bold text-base sm:text-lg">{payoutMultiplier}x</span>
             </div>
             
             <div className="flex justify-between">
               <span className="text-gray-400">Payout:</span>
-              <span className="text-green-500 font-bold text-lg">
+              <span className="text-green-500 font-bold text-base sm:text-lg">
                 ${((payout || 0) / 100).toFixed(2)}
               </span>
             </div>
@@ -92,7 +100,7 @@ export default function RoundInfo({
             
             <div>
               <span className="text-gray-500 text-xs">Nonce:</span>
-              <p className="text-gray-300 font-mono text-xs">{nonce}</p>
+              <p className="text-gray-300 font-mono text-xs break-all">{nonce}</p>
             </div>
             
             {clientSeed && (

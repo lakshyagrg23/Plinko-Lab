@@ -113,13 +113,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8 max-w-7xl">
         {/* Header */}
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+        <header className="text-center mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
             Plinko Lab
           </h1>
-          <p className="text-gray-400">Provably Fair Gaming with Commit-Reveal Protocol</p>
+          <p className="text-sm sm:text-base text-gray-400">Provably Fair Gaming with Commit-Reveal Protocol</p>
           <Link
             href="/verify"
             className="inline-block mt-2 text-sm text-blue-400 hover:text-blue-300 underline"
@@ -128,7 +128,7 @@ export default function Home() {
           </Link>
           
           {/* Accessibility Indicators */}
-          <div className="flex justify-center gap-4 mt-4">
+          <div className="flex justify-center gap-2 sm:gap-4 mt-4 flex-wrap">
             <MuteToggle isMuted={isMuted} onToggle={toggleMute} />
             {prefersReducedMotion && (
               <div 
@@ -144,16 +144,20 @@ export default function Home() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200">
+          <div 
+            className="mb-4 sm:mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200"
+            role="alert"
+            aria-live="assertive"
+          >
             <p className="font-bold">Error:</p>
-            <p>{error}</p>
+            <p className="text-sm sm:text-base">{error}</p>
           </div>
         )}
 
         {/* Main Game Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column: Controls & Info */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6 order-2 lg:order-1">
             <GameControls
               onDrop={handleDrop}
               isPlaying={isPlaying}
@@ -173,7 +177,7 @@ export default function Home() {
           </div>
 
           {/* Center Column: Game Board */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 order-1 lg:order-2">
             <PlinkoBoard
               path={currentRound?.path}
               binIndex={currentRound?.binIndex}
@@ -195,7 +199,7 @@ export default function Home() {
               }}
             />
             
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
               <PaytableDisplay />
             </div>
           </div>

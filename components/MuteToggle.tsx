@@ -15,18 +15,21 @@ export default function MuteToggle({ isMuted, onToggle }: MuteToggleProps) {
   return (
     <button
       onClick={onToggle}
-      className="fixed top-4 right-4 z-50 bg-gray-800 hover:bg-gray-700 text-white rounded-full p-3 shadow-lg transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 bg-gray-800 hover:bg-gray-700 active:bg-gray-600 text-white rounded-full p-2.5 sm:p-3 shadow-lg transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 touch-manipulation"
+      style={{ minWidth: '44px', minHeight: '44px' }}
       aria-label={isMuted ? 'Unmute sounds' : 'Mute sounds'}
+      aria-pressed={isMuted}
       title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
     >
       {isMuted ? (
         // Muted icon
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
+          className="h-5 w-5 sm:h-6 sm:w-6"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -45,10 +48,11 @@ export default function MuteToggle({ isMuted, onToggle }: MuteToggleProps) {
         // Unmuted icon
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
+          className="h-5 w-5 sm:h-6 sm:w-6"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"

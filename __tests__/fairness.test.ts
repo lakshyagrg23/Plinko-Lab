@@ -313,4 +313,45 @@ describe('Integration Tests', () => {
     expect(verifyResult.binIndex).toBe(result.binIndex);
     expect(verifyResult.pegMapHash).toBe(result.pegMapHash);
   });
+
+  test('Verifier API endpoint recomputes correct values', async () => {
+    const { serverSeed, nonce, clientSeed, dropColumn } = TEST_VECTORS;
+
+    // Call the verification API endpoint
+    const params = new URLSearchParams({
+      serverSeed,
+      clientSeed,
+      nonce,
+      dropColumn: dropColumn.toString(),
+    });
+
+    const response = await fetch(`http://localhost:3000/api/verify?${params}`);
+    
+    // If server is not running, skip this test
+    if (!response.ok && response.status === 0) {
+      console.warn('⚠️ Server not running - skipping API integration test');
+      return;
+    }
+
+    expect(response.ok).toBe(true);
+    
+    const data = await response.json();
+
+    // Verify response structure
+    expect(data.inputs).toBeDefined();
+    expect(data.computed).toBeDefined();
+
+    // Verify computed values match test vectors
+    expect(data.computed.commitHex).toBe(TEST_VECTORS.expectedCommitHex);
+    expect(data.computed.combinedSeed).toBe(TEST_VECTORS.expectedCombinedSeed);
+    expect(data.computed.binIndex).toBe(TEST_VECTORS.expectedBinIndex);
+
+    // Verify path is returned
+    expect(data.computed.path).toBeDefined();
+    expect(data.computed.path).toHaveLength(12);
+
+    // Verify peg map hash is returned
+    expect(data.computed.pegMapHash).toBeDefined();
+    expect(data.computed.pegMapHash).toHaveLength(64); // SHA-256
+  }, 10000); // 10 second timeout for API call
 });

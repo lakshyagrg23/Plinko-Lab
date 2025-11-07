@@ -422,28 +422,43 @@ export default function PlinkoBoard({
   }, [path, isAnimating, dimensions, onAnimationComplete, binIndex, onPegHit, prefersReducedMotion, debugMode]);
 
   return (
-    <div className="flex justify-center items-center w-full">
-      <div className="relative">
+    <div 
+      className="flex justify-center items-center w-full"
+      role="region"
+      aria-label="Plinko game board"
+    >
+      <div className="relative max-w-full">
         <canvas
           ref={canvasRef}
           width={dimensions.width}
           height={dimensions.height}
-          className="border-2 border-gray-700 rounded-lg bg-gradient-to-b from-gray-900 to-gray-800 transition-transform duration-300"
+          className="border-2 border-gray-700 rounded-lg bg-gradient-to-b from-gray-900 to-gray-800 transition-transform duration-300 max-w-full h-auto"
           style={{
             transform: tiltMode ? `rotate(${Math.random() > 0.5 ? 5 : -5}deg)` : 'rotate(0deg)',
             filter: tiltMode ? 'sepia(0.3) contrast(1.2)' : 'none',
+            touchAction: 'none', // Prevent touch gestures from interfering
           }}
+          aria-live="polite"
+          aria-busy={isAnimating}
+          aria-label={isAnimating ? 'Ball is dropping through the board' : 'Ready to drop ball'}
         />
         
         {/* Easter Egg Indicators */}
         {tiltMode && (
-          <div className="absolute top-2 left-2 bg-yellow-900/80 text-yellow-200 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+          <div 
+            className="absolute top-2 left-2 bg-yellow-900/80 text-yellow-200 px-2 sm:px-3 py-1 rounded-full text-xs font-bold animate-pulse"
+            role="status"
+            aria-live="polite"
+          >
             ⚠️ TILT MODE
           </div>
         )}
         
         {debugMode && (
-          <div className="absolute top-2 right-2 bg-green-900/80 text-green-200 px-3 py-1 rounded-full text-xs font-mono">
+          <div 
+            className="absolute top-2 right-2 bg-green-900/80 text-green-200 px-2 sm:px-3 py-1 rounded-full text-xs font-mono"
+            role="status"
+          >
             🔍 DEBUG
           </div>
         )}
