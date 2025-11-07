@@ -83,7 +83,7 @@ export async function POST(
         binIndex: outcome.binIndex,
         payoutMultiplier,
         betCents,
-        pathJson: outcome.path,
+        pathJson: JSON.parse(JSON.stringify(outcome.path)),
       },
     });
 
