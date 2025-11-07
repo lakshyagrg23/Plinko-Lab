@@ -11,7 +11,9 @@ import PlinkoBoard from '@/components/PlinkoBoard';
 import GameControls from '@/components/GameControls';
 import PaytableDisplay from '@/components/PaytableDisplay';
 import RoundInfo from '@/components/RoundInfo';
+import MuteToggle from '@/components/MuteToggle';
 import { PathDecision } from '@/lib/plinko-engine';
+import { useSoundEffects } from '@/lib/useSoundEffects';
 
 interface RoundData {
   roundId: string;
@@ -31,6 +33,9 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentRound, setCurrentRound] = useState<RoundData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Sound effects hook
+  const { isMuted, toggleMute, playPegSound, playLandingSound, playWinSound } = useSoundEffects();
 
   const handleDrop = async (dropColumn: number, betCents: number, clientSeed: string) => {
     setError(null);
@@ -102,6 +107,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      {/* Mute Toggle Button */}
+      <MuteToggle isMuted={isMuted} onToggle={toggleMute} />
+      
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="text-center mb-8">
@@ -153,8 +161,16 @@ export default function Home() {
               path={currentRound?.path}
               binIndex={currentRound?.binIndex}
               isAnimating={isPlaying}
+              onPegHit={playPegSound}
               onAnimationComplete={() => {
-                // Animation complete callback
+                // Play landing sound when animation completes
+                if (currentRound?.payoutMultiplier) {
+                  if (currentRound.payoutMultiplier >= 5) {
+                    playWinSound(); // Big win!
+                  } else {
+                    playLandingSound(currentRound.payoutMultiplier);
+                  }
+                }
               }}
             />
             

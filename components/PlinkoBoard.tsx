@@ -16,6 +16,7 @@ interface PlinkoBoard {
   binIndex?: number;
   onAnimationComplete?: () => void;
   isAnimating?: boolean;
+  onPegHit?: () => void; // Callback for peg collision sound
 }
 
 const ROWS = 12;
@@ -26,6 +27,7 @@ export default function PlinkoBoard({
   binIndex,
   onAnimationComplete,
   isAnimating = false,
+  onPegHit,
 }: PlinkoBoard) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 900 });
@@ -271,6 +273,9 @@ export default function PlinkoBoard({
       ctx.fill();
       ctx.shadowBlur = 0;
 
+      // Play peg hit sound
+      onPegHit?.();
+
       currentRow++;
       
       if (currentRow < path.length) {
@@ -278,7 +283,7 @@ export default function PlinkoBoard({
           if (!isCancelled) {
             animationId = requestAnimationFrame(animate);
           }
-        }, 100); // 100ms per row
+        }, 150); // 100ms per row
       } else {
         onAnimationComplete?.();
       }
@@ -298,7 +303,7 @@ export default function PlinkoBoard({
         clearTimeout(timeoutId);
       }
     };
-  }, [path, isAnimating, dimensions, onAnimationComplete, binIndex]);
+  }, [path, isAnimating, dimensions, onAnimationComplete, binIndex, onPegHit]);
 
   return (
     <div className="flex justify-center items-center w-full">
