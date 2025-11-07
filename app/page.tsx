@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import PlinkoBoard from '@/components/PlinkoBoard';
 import GameControls from '@/components/GameControls';
@@ -35,7 +35,6 @@ interface RoundData {
 
 export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
-  const isPlayingRef = useRef(false); // Immediate synchronous flag
   const [currentRound, setCurrentRound] = useState<RoundData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -47,15 +46,13 @@ export default function Home() {
   const prefersReducedMotion = useReducedMotion();
 
   const handleDrop = async (dropColumn: number, betCents: number, clientSeed: string) => {
-    // Prevent concurrent drops using ref for immediate check
-    if (isPlayingRef.current) {
+    // Prevent concurrent drops
+    if (isPlaying) {
       console.log('🚫 Drop ignored - animation already in progress');
       return;
     }
     
     setError(null);
-    isPlayingRef.current = true; // Set ref immediately (synchronous)
-    setIsPlaying(true); // Set state for UI
 
     try {
       // Step 1: Commit
@@ -96,6 +93,9 @@ export default function Home() {
         status: 'STARTED',
         dropColumn,
       });
+      
+      // Start animation only after we have the round data
+      setIsPlaying(true);
 
       // Wait for animation to complete before revealing
       setTimeout(async () => {
@@ -118,7 +118,6 @@ export default function Home() {
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      isPlayingRef.current = false; // Reset ref
       setIsPlaying(false);
     }
   };
@@ -236,7 +235,6 @@ export default function Home() {
               onPegHit={playPegSound}
               onAnimationComplete={() => {
                 // Animation completed - re-enable the drop button
-                isPlayingRef.current = false; // Reset ref immediately
                 setIsPlaying(false);
                 
                 // Play landing sound and trigger confetti for big wins
