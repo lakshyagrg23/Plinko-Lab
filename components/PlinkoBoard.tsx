@@ -31,6 +31,7 @@ export default function PlinkoBoard({
 }: PlinkoBoard) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 900 });
+  const [binPulse, setBinPulse] = useState(0); // Pulse animation value (0-1)
 
   // Responsive canvas sizing
   useEffect(() => {
@@ -103,20 +104,67 @@ export default function PlinkoBoard({
       ctx.fillText(i.toString(), x + binWidth / 2, binY + binHeight / 2);
     }
 
-    // Highlight landing bin if provided
+    // Highlight landing bin if provided with pulse effect
     if (binIndex !== undefined) {
       const x = binIndex * binWidth;
       const color = getBinColor(binIndex);
       
-      ctx.fillStyle = color + '80';
+      // Calculate pulse effect (scale and opacity)
+      const pulseScale = 1 + binPulse * 0.1; // Grow slightly during pulse
+      const pulseOpacity = Math.floor((0.5 + binPulse * 0.3) * 255).toString(16).padStart(2, '0');
+      
+      ctx.save();
+      ctx.translate(x + binWidth / 2, binY + binHeight / 2);
+      ctx.scale(pulseScale, pulseScale);
+      ctx.translate(-(x + binWidth / 2), -(binY + binHeight / 2));
+      
+      ctx.fillStyle = color + pulseOpacity;
       ctx.fillRect(x, binY, binWidth - 2, binHeight);
       
       ctx.strokeStyle = color;
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 4 + binPulse * 2; // Thicker border during pulse
       ctx.strokeRect(x, binY, binWidth - 2, binHeight);
+      
+      ctx.restore();
     }
 
-  }, [dimensions, binIndex]);
+  }, [dimensions, binIndex, binPulse]);
+
+  // Bin pulse animation when ball lands
+  useEffect(() => {
+    if (binIndex === undefined || isAnimating) return;
+
+    // Trigger pulse animation
+    let animationId: number;
+    const duration = 800; // 0.8 seconds
+    const startTime = Date.now();
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      // Pulse goes 0 -> 1 -> 0
+      const pulse = Math.sin(eased * Math.PI);
+      
+      setBinPulse(pulse);
+
+      if (progress < 1) {
+        animationId = requestAnimationFrame(animate);
+      } else {
+        setBinPulse(0);
+      }
+    };
+
+    animationId = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, [binIndex, isAnimating]);
 
   // Animate ball following path
   useEffect(() => {

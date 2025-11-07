@@ -12,6 +12,7 @@ import GameControls from '@/components/GameControls';
 import PaytableDisplay from '@/components/PaytableDisplay';
 import RoundInfo from '@/components/RoundInfo';
 import MuteToggle from '@/components/MuteToggle';
+import Confetti from '@/components/Confetti';
 import { PathDecision } from '@/lib/plinko-engine';
 import { useSoundEffects } from '@/lib/useSoundEffects';
 
@@ -33,6 +34,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentRound, setCurrentRound] = useState<RoundData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
   
   // Sound effects hook
   const { isMuted, toggleMute, playPegSound, playLandingSound, playWinSound } = useSoundEffects();
@@ -163,10 +165,14 @@ export default function Home() {
               isAnimating={isPlaying}
               onPegHit={playPegSound}
               onAnimationComplete={() => {
-                // Play landing sound when animation completes
+                // Play landing sound and trigger confetti for big wins
                 if (currentRound?.payoutMultiplier) {
                   if (currentRound.payoutMultiplier >= 5) {
                     playWinSound(); // Big win!
+                    setShowConfetti(true); // Trigger confetti
+                  } else if (currentRound.payoutMultiplier >= 2) {
+                    playLandingSound(currentRound.payoutMultiplier);
+                    setShowConfetti(true); // Smaller confetti for medium wins
                   } else {
                     playLandingSound(currentRound.payoutMultiplier);
                   }
@@ -190,6 +196,13 @@ export default function Home() {
           </p>
         </footer>
       </div>
+
+      {/* Confetti effect for wins */}
+      <Confetti
+        active={showConfetti}
+        multiplier={currentRound?.payoutMultiplier}
+        onComplete={() => setShowConfetti(false)}
+      />
     </div>
   );
 }
