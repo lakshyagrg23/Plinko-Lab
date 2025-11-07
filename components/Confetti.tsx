@@ -8,6 +8,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface Particle {
   x: number;
@@ -41,9 +42,16 @@ const COLORS = [
 
 export default function Confetti({ active, multiplier = 1, onComplete }: ConfettiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (!active) return;
+
+    // Skip confetti animation for users who prefer reduced motion
+    if (prefersReducedMotion) {
+      onComplete?.();
+      return;
+    }
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -134,7 +142,7 @@ export default function Confetti({ active, multiplier = 1, onComplete }: Confett
         cancelAnimationFrame(animationId);
       }
     };
-  }, [active, multiplier, onComplete]);
+  }, [active, multiplier, onComplete, prefersReducedMotion]);
 
   if (!active) return null;
 

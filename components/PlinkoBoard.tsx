@@ -10,6 +10,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { PathDecision } from '@/lib/plinko-engine';
 import { getBinColor } from '@/lib/payout';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface PlinkoBoard {
   path?: PathDecision[];
@@ -32,6 +33,11 @@ export default function PlinkoBoard({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 900 });
   const [binPulse, setBinPulse] = useState(0); // Pulse animation value (0-1)
+  const prefersReducedMotion = useReducedMotion();
+  
+  // Easter Eggs
+  const [tiltMode, setTiltMode] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
 
   // Responsive canvas sizing
   useEffect(() => {
@@ -45,6 +51,22 @@ export default function PlinkoBoard({
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
+
+  // Easter Egg: Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 't' || e.key === 'T') {
+        setTiltMode(prev => !prev);
+        console.log('🎮 TILT MODE:', !tiltMode ? 'ACTIVATED' : 'DEACTIVATED');
+      } else if (e.key === 'g' || e.key === 'G') {
+        setDebugMode(prev => !prev);
+        console.log('🔍 DEBUG MODE:', !debugMode ? 'ACTIVATED' : 'DEACTIVATED');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [tiltMode, debugMode]);
 
   // Draw static board
   useEffect(() => {
@@ -260,6 +282,39 @@ export default function PlinkoBoard({
         ctx.lineWidth = 4;
         ctx.strokeRect(x, binY, binWidth - 2, binHeight);
       }
+      
+      // Debug mode: Draw grid and labels
+      if (debugMode) {
+        // Draw peg grid overlay
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        
+        for (let row = 0; row < ROWS; row++) {
+          const pegCount = row + 3;
+          const y = topMargin + (row + 1) * rowSpacing;
+          
+          // Horizontal line
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+          
+          // Row label
+          ctx.fillStyle = '#00ff00';
+          ctx.font = `${width * 0.012}px monospace`;
+          ctx.fillText(`R${row}`, 10, y - 5);
+          
+          // Peg positions
+          for (let peg = 0; peg < pegCount; peg++) {
+            const x = width / 2 - (pegCount - 1) * horizontalSpacing / 2 + peg * horizontalSpacing;
+            ctx.fillRect(x - 2, y - 2, 4, 4);
+            ctx.fillText(`P${peg}`, x - 10, y + 15);
+          }
+        }
+        
+        ctx.setLineDash([]);
+      }
     };
 
     const animate = () => {
@@ -321,17 +376,30 @@ export default function PlinkoBoard({
       ctx.fill();
       ctx.shadowBlur = 0;
 
+      // Debug mode: Show decision info
+      if (debugMode && decision) {
+        ctx.fillStyle = '#00ff00';
+        ctx.font = `${width * 0.014}px monospace`;
+        ctx.fillText(
+          `RNG: ${decision.randomValue.toFixed(4)} | Bias: ${decision.adjustedBias.toFixed(4)} | ${decision.decision}`,
+          currentX - 80,
+          endY - 15
+        );
+      }
+
       // Play peg hit sound
       onPegHit?.();
 
       currentRow++;
       
       if (currentRow < path.length) {
+        // Reduce animation time if user prefers reduced motion
+        const delay = prefersReducedMotion ? 30 : 100; // Much faster for reduced motion
         timeoutId = setTimeout(() => {
           if (!isCancelled) {
             animationId = requestAnimationFrame(animate);
           }
-        }, 150); // 100ms per row
+        }, delay);
       } else {
         onAnimationComplete?.();
       }
@@ -351,16 +419,35 @@ export default function PlinkoBoard({
         clearTimeout(timeoutId);
       }
     };
-  }, [path, isAnimating, dimensions, onAnimationComplete, binIndex, onPegHit]);
+  }, [path, isAnimating, dimensions, onAnimationComplete, binIndex, onPegHit, prefersReducedMotion, debugMode]);
 
   return (
     <div className="flex justify-center items-center w-full">
-      <canvas
-        ref={canvasRef}
-        width={dimensions.width}
-        height={dimensions.height}
-        className="border-2 border-gray-700 rounded-lg bg-gradient-to-b from-gray-900 to-gray-800"
-      />
+      <div className="relative">
+        <canvas
+          ref={canvasRef}
+          width={dimensions.width}
+          height={dimensions.height}
+          className="border-2 border-gray-700 rounded-lg bg-gradient-to-b from-gray-900 to-gray-800 transition-transform duration-300"
+          style={{
+            transform: tiltMode ? `rotate(${Math.random() > 0.5 ? 5 : -5}deg)` : 'rotate(0deg)',
+            filter: tiltMode ? 'sepia(0.3) contrast(1.2)' : 'none',
+          }}
+        />
+        
+        {/* Easter Egg Indicators */}
+        {tiltMode && (
+          <div className="absolute top-2 left-2 bg-yellow-900/80 text-yellow-200 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+            ⚠️ TILT MODE
+          </div>
+        )}
+        
+        {debugMode && (
+          <div className="absolute top-2 right-2 bg-green-900/80 text-green-200 px-3 py-1 rounded-full text-xs font-mono">
+            🔍 DEBUG
+          </div>
+        )}
+      </div>
     </div>
   );
 }

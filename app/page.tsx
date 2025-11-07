@@ -15,6 +15,7 @@ import MuteToggle from '@/components/MuteToggle';
 import Confetti from '@/components/Confetti';
 import { PathDecision } from '@/lib/plinko-engine';
 import { useSoundEffects } from '@/lib/useSoundEffects';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface RoundData {
   roundId: string;
@@ -38,6 +39,9 @@ export default function Home() {
   
   // Sound effects hook
   const { isMuted, toggleMute, playPegSound, playLandingSound, playWinSound } = useSoundEffects();
+  
+  // Accessibility: Detect reduced motion preference
+  const prefersReducedMotion = useReducedMotion();
 
   const handleDrop = async (dropColumn: number, betCents: number, clientSeed: string) => {
     setError(null);
@@ -109,9 +113,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-      {/* Mute Toggle Button */}
-      <MuteToggle isMuted={isMuted} onToggle={toggleMute} />
-      
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="text-center mb-8">
@@ -125,6 +126,20 @@ export default function Home() {
           >
             Verify Fairness →
           </Link>
+          
+          {/* Accessibility Indicators */}
+          <div className="flex justify-center gap-4 mt-4">
+            <MuteToggle isMuted={isMuted} onToggle={toggleMute} />
+            {prefersReducedMotion && (
+              <div 
+                className="px-3 py-1 bg-blue-900/50 border border-blue-500 rounded-full text-xs text-blue-300"
+                role="status"
+                aria-live="polite"
+              >
+                ⚡ Reduced Motion Active
+              </div>
+            )}
+          </div>
         </header>
 
         {/* Error Display */}
@@ -193,6 +208,10 @@ export default function Home() {
           </p>
           <p className="mt-2">
             All outcomes are deterministic and verifiable through cryptographic proofs.
+          </p>
+          <p className="mt-4 text-xs text-gray-600">
+            💡 Easter Eggs: Press <kbd className="px-2 py-1 bg-gray-700 rounded text-gray-300">T</kbd> for TILT mode, 
+            <kbd className="px-2 py-1 bg-gray-700 rounded text-gray-300 ml-1">G</kbd> for Debug Grid
           </p>
         </footer>
       </div>
